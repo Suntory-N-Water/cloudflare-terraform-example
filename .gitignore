@@ -1,0 +1,8 @@
+# Terraform
+.terraform/
+*.tfstate*
+.terraform.lock.hcl
+terraform.tfvars
+
+# Secrets
+.env
