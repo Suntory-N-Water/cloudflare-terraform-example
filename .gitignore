@@ -6,6 +6,8 @@ terraform.tfvars
 
 # Secrets
 .env
+
+# Claude Code settings
 build/
 .claude/skills/cloudflare-terraform-provider
 .claude/skills/cloudflare-one-skills
