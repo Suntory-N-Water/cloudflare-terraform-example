@@ -7,6 +7,5 @@ terraform {
   }
 }
 
-provider "cloudflare" {
-  # API トークンは環境変数 CLOUDFLARE_API_TOKEN から自動読み込み
-}
+# API トークンは環境変数 CLOUDFLARE_API_TOKEN から自動読み込み
+provider "cloudflare" {}

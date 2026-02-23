@@ -1,26 +1,29 @@
-# YouTube Shorts ブロック調査記録
+# YouTube Shorts ブロック調査記録(アーカイブ)
+
+> **注意**: この調査は以前の `terraform/gateway/` 構成で実施したものです。
+> Gateway リソースは削除済みのため、本ドキュメントはアーカイブとして残しています。
 
 ## 目的
 
-iPhone の Safari / YouTube アプリで YouTube Shorts（`/shorts` パス）のみをブロックする。
+iPhone の Safari / YouTube アプリで YouTube Shorts(`/shorts` パス)のみをブロックする。
 通常の YouTube 動画には影響を与えない。
 
 ## 構成
 
-- Cloudflare Zero Trust Gateway（HTTP ポリシー）で URL パスベースのブロックを実現する
-- Terraform（Cloudflare Provider v5）でポリシーを管理
+- Cloudflare Zero Trust Gateway(HTTP ポリシー)で URL パスベースのブロックを実現する
+- Terraform(Cloudflare Provider v5)でポリシーを管理
 - iPhone に WARP アプリをインストールし、Gateway 経由でトラフィックを検査
 
-## 作成済みリソース（apply 済み）
+## 作成済みリソース(削除済み)
 
-### Terraform リソース（terraform/gateway/）
+### Terraform リソース(terraform/gateway/ — 削除済み)
 
 | ファイル | 内容 |
 |---|---|
 | provider.tf | Cloudflare Provider v5 |
 | vars.tf | account_id 変数 |
 | settings.tf | TLS decryption 有効化 |
-| policies.tf | 2つのポリシー（下記） |
+| policies.tf | 2つのポリシー(下記) |
 
 ### Gateway ポリシー
 
@@ -31,59 +34,29 @@ iPhone の Safari / YouTube アプリで YouTube Shorts（`/shorts` パス）の
 
 ### スマホ側セットアップ
 
-- WARP アプリ（1.1.1.1）インストール済み、Zero Trust 組織にログイン・接続済み
-- Cloudflare ルート証明書インストール済み（iOS プロファイル + 証明書信頼設定で有効化）
+- WARP アプリ(1.1.1.1)インストール済み、Zero Trust 組織にログイン・接続済み
+- Cloudflare ルート証明書インストール済み(iOS プロファイル + 証明書信頼設定で有効化)
 
 ### ダッシュボード側設定
 
 - Proxy: オン
 - TLS decryption: オン
-- デバイス登録ポリシー: 設定済み（One-time PIN 認証）
+- デバイス登録ポリシー: 設定済み(One-time PIN 認証)
 
 ## 確認済みの事実
 
 ### 正常に動作していること
 
-- HTTP 検査は機能している（`www.aso-taro.jp` 等の HTTP/HTTPS サイトが Gateway HTTP ログに表示される）
-- DNS は Gateway を経由している（DNS ポリシーで `youtube.com` をブロックしたところ、実際にブロックされた）
-- WARP モードは `warp`（Traffic and DNS）で正しい
-- TLS decryption は有効で、YouTube CDN ドメイン（`i.ytimg.com`, `yt3.ggpht.com`, `lh3.googleusercontent.com`）は HTTP ログに表示される
+- HTTP 検査は機能している(`www.aso-taro.jp` 等の HTTP/HTTPS サイトが Gateway HTTP ログに表示される)
+- DNS は Gateway を経由している(DNS ポリシーで `youtube.com` をブロックしたところ、実際にブロックされた)
+- WARP モードは `warp`(Traffic and DNS)で正しい
+- TLS decryption は有効で、YouTube CDN ドメイン(`i.ytimg.com`, `yt3.ggpht.com`, `lh3.googleusercontent.com`)は HTTP ログに表示される
 
 ### 問題の症状
 
-- `www.youtube.com` が Gateway の **全レイヤー**（DNS / HTTP / Network）のログに表示されない
+- `www.youtube.com` が Gateway の **全レイヤー**(DNS / HTTP / Network)のログに表示されない
 - HTTP ポリシー自体は正しい条件式だが、トラフィックが HTTP 検査を通過しないためマッチしない
 - QUIC ブロックポリシーも Network ログにマッチ記録がない
-
-### 確認済みで問題なかった項目
-
-| 項目 | 状態 |
-|---|---|
-| WARP モード | `warp`（Traffic and DNS） |
-| Split Tunnels | デフォルト（プライベート IP のみ除外、YouTube は除外されていない） |
-| Local Domain Fallback | デフォルト |
-| Do Not Inspect ポリシー | なし（手動作成分） |
-| iCloud Private Relay | 日本では利用不可（無関係） |
-| 古い手動ポリシー | API で削除済み（以前 youtube.com を全 allow していたポリシー） |
-| WARP 再接続 | 改善なし |
-| Safari 完全終了 | 改善なし |
-| プライベートブラウズ | 改善なし |
-
-## 試したこと
-
-### 切り分け 1: HTTP 検査の基本動作確認
-
-`www.aso-taro.jp`（HTTP サイト）にアクセスし、Gateway HTTP ログに表示されることを確認。
-HTTP 検査の基本動作は正常。
-
-**結論: YouTube / Google 固有の問題**
-
-### 切り分け 2: DNS が Gateway を経由しているか確認
-
-Terraform で一時的に DNS ポリシー（`youtube.com` を DNS レベルでブロック）を作成・apply。
-iPhone の Safari で `youtube.com` にアクセスしたところ、ブロックされた。
-
-**結論: DNS は Gateway 経由。問題は DNS 解決後の HTTPS 通信が HTTP 検査に到達しないこと**
 
 ## 未解決の課題
 
@@ -93,7 +66,7 @@ YouTube CDN ドメインは検査対象になるが、`www.youtube.com` 本体�
 
 ## 検討した仮説
 
-### 仮説 1: ECH（Encrypted Client Hello）
+### 仮説 1: ECH(Encrypted Client Hello)
 
 TLS ClientHello の SNI が暗号化されて Gateway がホスト名を識別できない可能性。
 
@@ -108,7 +81,7 @@ ECH のサーバーサイド展開はほぼ Cloudflare に限定されており�
 
 ### 仮説 3: Gateway のデフォルト Do Not Inspect 動作
 
-Cloudflare Gateway が証明書ピンニング等の問題回避のため、特定のアプリケーション（Google/YouTube を含む）を自動的に TLS 検査対象外にしている可能性。
+Cloudflare Gateway が証明書ピンニング等の問題回避のため、特定のアプリケーション(Google/YouTube を含む)を自動的に TLS 検査対象外にしている可能性。
 手動で作成した Do Not Inspect ポリシーは存在しないが、Gateway 側のデフォルト動作として除外されている可能性がある。
 
 **未検証。ダッシュボードの Settings > TLS Decryption 周辺に該当設定があるか確認が必要。**
@@ -120,10 +93,10 @@ iOS Chrome での確認で切り分け可能だが、未実施。
 
 **未検証。**
 
-## 代替アプローチ（未実施）
+## 代替アプローチ(未実施)
 
 HTTP ポリシーでの URL パスベースブロックが困難な場合の代替手段:
 
 - iOS のスクリーンタイムで YouTube Shorts を制限
 - YouTube アプリの設定で Shorts を非表示にする方法の調査
-- ブラウザ拡張機能による Shorts 非表示（iOS Safari では不可）
+- ブラウザ拡張機能による Shorts 非表示(iOS Safari では不可)
