@@ -62,12 +62,13 @@ resource "cloudflare_zone_setting" "automatic_https_rewrites" {
 # Security - セキュリティ設定
 # =============================================================================
 
-# Browser Integrity Check を有効化
-# 訪問者の HTTP ヘッダーを検査し、不正な User-Agent やスパムボットの異常なヘッダーパターンを検出する
+# Browser Integrity Check を無効化
+# 静的ブログのため恩恵が薄く、Slackbot 等の OGP クローラーが JavaScript チャレンジをクリアできず
+# OGP 画像が表示されない問題が発生するため off にする
 resource "cloudflare_zone_setting" "browser_check" {
   zone_id    = var.zone_id
   setting_id = "browser_check"
-  value      = "on"
+  value      = "off"
 }
 
 # チャレンジ（CAPTCHA 等）クリア後の有効時間を 30 分に設定
